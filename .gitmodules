@@ -1,0 +1,3 @@
+[submodule "node-gstreamer-superficial"]
+	path = node-gstreamer-superficial
+	url = https://github.com/dturing/node-gstreamer-superficial
