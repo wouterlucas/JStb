@@ -1,0 +1,12 @@
+{
+    "name": "JStb",
+    "version": "0.1.0",
+    "description": "Node JavaScript API for Settop boxes",
+    "main": "webservices.js",
+    "dependencies": {
+        "log4js": "0.6.22",
+        "websocket" : "1.0.7"
+    },
+    "author": "Wouter van Boesschoten",
+    "license": "GPLv3"
+}
