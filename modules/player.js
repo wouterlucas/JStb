@@ -12,7 +12,6 @@ var re = require('./response.js');
 var eventsBus;
 var players = [];
 
-
 /*
  * Player class
  */
@@ -28,34 +27,54 @@ function Player(idx){
     var url;
     var pipeline;
 
+    /* 
+    * Getters
+    */ 
     this.getPlayerIdx = function(){
         return playerIdx;
-    }
+    };
 
     this.getPosition = function(){
         return position;
-    }
+    };
 
     this.getRate = function(){
         return rate;
-    }
+    };
 
     this.getUrl = function(){
         return url;
-    }
+    };
 
+    /*
+    *  Collapsed util to check for any changes on the incoming request
+    */
+    this.detectChange = function(rate, position){
+        if (rate !== undefined && rate != this.rate){
+            this.changeRate(rate);
+        }
 
+        if (position !== undefined && position != this.position){
+            this.jumpToPosition(position);
+        }
+    };
+
+    /*
+    * Player functions
+    */
     this.play = function(newUrl){
         url = newUrl;
     
-        pipeline = new gstreamer.Pipeline("videotestsrc ! autovideosink");
+        //pipeline = new gstreamer.Pipeline("videotestsrc ! autovideosink");
+
+        pipeline = new gstreamer.Pipeline('souphttpsrc location="' + newUrl + '" ! hlsdemux ! tsdemux ! h264parse ! avdec_h264 ! autovideosink');
         pipeline.play();
-    }
+    };
 
     this.changeRate = function(newRate){
         /** bind here **/
         rate = newRate;
-    }
+    };
 
     this.pause = function(){
         if (pipeline){
@@ -63,12 +82,12 @@ function Player(idx){
         }
 
         rate = 0;
-    }
+    };
 
     this.jumpToPosition = function(newPosition){
         /** bind here **/
         position = newPosition;
-    }
+    };
 
     this.stop = function(){
         if (pipeline){
@@ -76,6 +95,17 @@ function Player(idx){
         }
 
         playerState = plStopped;
+    };
+
+    /* 
+    *  Main player loop, checks for updates on the streamer.
+    *  Propogates updates up to the app if required.
+    *  
+    *  Runs every second.
+    */
+
+    function playerLoop(){
+        //...//
     }
 }
 
@@ -85,7 +115,7 @@ function createPlayer(request){
     var params = request.params;
 
     //validate request first
-    if (params.source === undefined || params.source.url === undefined || params.source.url == ''){
+    if (params.source === undefined || params.source.url === undefined || params.source.url === ''){
         log.error('Source object or url not found');
         re.Error(request.id, 401, 'Source or url not found');
         return;
@@ -111,7 +141,17 @@ function createPlayer(request){
 }
 
 function updatePlayer(request){
+    if (!request.player && !request.player.id){
+        return;
+    }
 
+    var player = players[request.player.id];
+
+    if (player){
+        player.detectChange(request.player.rate, request.player.position);
+    }
+
+    re.Respond(request.id, 200);
 }
 
 function destroyPlayer(request){
@@ -134,7 +174,7 @@ var methods = {
     'players.createPlayer' : createPlayer,
     'players.updatePlayer' : updatePlayer,
     'players.destroyPlayer' : destroyPlayer
-}
+};
 
 exports.startPlayerInterface = function(events){
     eventsBus = events;
